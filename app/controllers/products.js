@@ -162,12 +162,27 @@ router.put('/:id', function(req, res, next) {
     product.isCrueltyFree = req.body.isCrueltyFree;  
     product.barcode = req.body.barcode;
     product.active = req.body.active;
-    product.ingredients = req.body.ingredients;
-
-    if(!ingreproduct.ingredients){
-      product.isCrueltyFreeVerify = false;
-      product.isVeganVerify = false;  
+    product.isVeganVerify = req.body.isVeganVerify;
+    product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;  
+    
+    if(req.body.ingredients != undefined && req.body.ingredients.length > 0){
+      req.body.ingredients.forEach( async i => {
+        const nameEnglish = i.nameEnglish;
+        const namePortuguese = i.namePortuguese;
+        product.isVeganVerify = true;  
+        if( Ingredient.findOne({nameEnglish}))
+        {
+          product.isVegan = false;
+          return true;
+        }
+        else if(await Ingredient.findOne({namePortuguese}))
+        { 
+          product.isVegan = false;
+          return true;
+        }
+      });
     }
+    product.ingredients = req.body.ingredients;
 
     product.save(function(error) {
     if(error)
