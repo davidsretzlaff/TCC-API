@@ -33,7 +33,7 @@ if (!id.match(/^[0-9a-fA-F]{24}$/))
 
   }).then(ingredients => {
     if(!ingredients)
-      return res.status(400).send({status: "error", error: "Product not found" });
+      return res.status(400).send({status: "error", error: "ingredients not found" });
     res.status(200).send(ingredients);
   }).catch(e => {
     return res.status(400).send({ error: "Error" });
@@ -51,7 +51,7 @@ router.get('/nameEnglish/:name', function(req, res, next) {
     namePortuguese:  { "$regex": name, "$options": "i" },
   }).then(data => {
     if(data.length == 0)
-      return res.status(400).send({status: "error", error: "Product not found" });
+      return res.status(400).send({status: "error", error: "ingredients not found" });
 
     res.status(200).send(data);
   }).catch(e => {
