@@ -4,7 +4,7 @@ const router = express.Router();
 var mongoose = require('mongoose');
 var Brand = require('../models/brand')
 
-router.use(authMiddleware);
+//router.use(authMiddleware);
 
 /* GET produtos listing. */
 router.get('/', function(req, res, next) {

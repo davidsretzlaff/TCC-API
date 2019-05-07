@@ -113,16 +113,14 @@ router.post('/', async (req, res) => {
     req.body.ingredients.forEach( async i => {
       const nameEnglish = i.nameEnglish;
       const namePortuguese = i.namePortuguese;
-
-      if(verifyIngredient(nameEnglish))
+      product.isVeganVerify = true;  
+      if(await Ingredient.findOne({nameEnglish}))
       {
-        product.isVeganVerify = true;  
         product.isVegan = false;
         return true;
       }
-      else if(verifyIngredient(namePortuguese))
-      {
-        product.isVeganVerify = true;  
+      if(await Ingredient.findOne({namePortuguese}))
+      { 
         product.isVegan = false;
         return true;
       }
@@ -138,16 +136,6 @@ router.post('/', async (req, res) => {
     });
   });
 
-function verifyIngredient(name ){
-    // return token = jwt.sign(params, authConfig.secret, {
-    //     expiresIn: 86400,
-    // });
-    if(Ingredient.findOne(name))
-    {
-      return true;
-    }
-    return false;
-}
 
 /* put produtos listing. */
 router.put('/:id', function(req, res, next) {

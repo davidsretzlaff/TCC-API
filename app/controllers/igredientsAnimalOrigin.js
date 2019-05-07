@@ -2,9 +2,9 @@ var express = require('express');
 var router = express.Router();
 var mongoose = require('mongoose');
 var Ingredient = require('../models/ingredientsAnimalOrigin')
-const authMiddleware = require('../middlewares/auth')
+//const authMiddleware = require('../middlewares/auth')
 
-router.use(authMiddleware);
+//router.use(authMiddleware);
 /* GET produtos listing. */
 router.get('/', function(req, res, next) {
     Ingredient.find(function(err,ingredients) {
@@ -71,7 +71,7 @@ router.get('/NameEnglish/:name', function(req, res, next) {
       nameEnglish:  { "$regex": name, "$options": "i" },
     }).then(data => {
       if(data.length == 0)
-        return res.status(400).send({status: "error", error: "Product not found" });
+        return res.status(400).send({status: "error", error: "Ingredient not found" });
   
       res.status(200).send(data);
     }).catch(e => {
@@ -97,12 +97,12 @@ router.post('/', async (req, res) => {
 
   if(await Ingredient.findOne({namePortuguese}))
   {
-    return res.status(400).send({status: "error", error: "Product already exist" });
+    return res.status(400).send({status: "error", error: "Ingredient already exist" });
   }
 
   if(await Ingredient.findOne({nameEnglish}))
   {
-    return res.status(400).send({status: "error", error: "Product already exist" });
+    return res.status(400).send({status: "error", error: "Ingredient already exist" });
   }
 
     var ingredient = new Ingredient();
@@ -136,7 +136,7 @@ router.put('/:id', function(req, res, next) {
     if(error) 
       res.send(error);    
     if(!ingredient)
-      return res.status(200).json({status: "error", message: 'product not found' });
+      return res.status(200).json({status: "error", message: 'Ingredient not found' });
       
     ingredient.nameEnglish = nameEnglish;
     ingredient.namePortuguese = namePortuguese;
@@ -166,9 +166,9 @@ router.delete('/:id',  async (req, res) => {
         return;
     }
     if(ingredient.n > 0){
-        res.status(200).json({status: "success", message: 'product deleted!' });
+        res.status(200).json({status: "success", message: 'Ingredient deleted!' });
     }else{
-        res.status(200).json({status: "error", message: 'product not found' });
+        res.status(200).json({status: "error", message: 'Ingredient not found' });
     }
     
 });
