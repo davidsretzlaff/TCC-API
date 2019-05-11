@@ -4,6 +4,35 @@ var mongoose = require('mongoose');
 var Product = require('../models/product')
 var Ingredient = require('../models/ingredientsAnimalOrigin')
 //const authMiddleware = require('../middlewares/auth')
+const multer = require('multer');
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, req.body.barcode + file.originalname);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // reject a file
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 1024 * 1024 * 5
+  },
+  fileFilter: fileFilter
+});
+
 
 //router.use(authMiddleware);
 /* GET produtos listing. */
@@ -82,8 +111,11 @@ router.get('/barcode/:barcode', function (req, res, next) {
 });
 
 /* POST product */
-router.post('/', async (req, res) => {
+router.post('/', upload.single('productImage'), async (req, res) => {
   console.log("POST");
+  if (req.file != undefined)
+    console.log(req.file);
+
   var name = req.body.name;
 
   if (!name) {
@@ -100,12 +132,15 @@ router.post('/', async (req, res) => {
   product.name = req.body.name;
   product.description = req.body.description;
   product.isCrueltyFree = req.body.isCrueltyFree;
-  product.active = req.body.active;
+  product.active = false;
   product.barcode = req.body.barcode;
   product.isCrueltyFreeVerify = false;
   product.isVeganVerify = false;
   product.isVegan = true;
   product.isCrueltyFree = req.body.isCrueltyFree;
+
+  if (req.file.path != undefined)
+    product.productImage = req.file.path;
 
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
@@ -132,7 +167,7 @@ router.post('/', async (req, res) => {
 
 
 /* put produtos listing. */
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('productImage'), async (req, res) => {
   console.log("PUT ", req.params.id);
 
   const { id } = req.params;
@@ -149,7 +184,6 @@ router.put('/:id', async (req, res) => {
     if (!product)
       return res.status(200).json({ status: "error", message: 'product not found' });
 
-    product.brand.name = req.body.brand.name;
     product.name = req.body.name;
     product.description = req.body.description;
     product.isVegan = req.body.isVegan;
@@ -159,19 +193,29 @@ router.put('/:id', async (req, res) => {
     product.isVeganVerify = req.body.isVeganVerify;
     product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;
 
-    await asyncForEach(req.body.ingredients, async (element) => {
-      product.isVeganVerify = true;
-      if (await Ingredient.findOne({ 'nameEnglish': element.nameEnglish })) {
-        product.isVegan = false;
-        return true;
-      }
-      if (await Ingredient.findOne({ 'namePortuguese': element.namePortuguese })) {
-        product.isVegan = false;
-        return true;
-      }
-    });
+    if(req.body.brand != undefined)
+      req.body.brand.name
+    
+    if (req.file != undefined)
+      product.productImage = req.file.path;
 
-    product.ingredients = req.body.ingredients;
+    if (req.body.ingredients != undefined) {
+      await asyncForEach(req.body.ingredients, async (element) => {
+        product.isVeganVerify = true;
+        if (await Ingredient.findOne({ 'nameEnglish': element.nameEnglish })) {
+          product.isVegan = false;
+          return true;
+        }
+        if (await Ingredient.findOne({ 'namePortuguese': element.namePortuguese })) {
+          product.isVegan = false;
+          return true;
+        }
+      });
+
+      product.ingredients = req.body.ingredients;
+    }
+
+   
 
     product.save(function (error) {
       if (error)

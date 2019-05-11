@@ -6,61 +6,62 @@ let brand = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     name: {
         type: String,
-        require : true,
+        require: true,
         unique: false,
     },
-}); 
+});
 
 //schema ingredients
 var IngredientsSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     namePortuguese: {
         type: String,
-        require : true,
+        require: true,
     },
     nameEnglish: {
         type: String,
     },
-}); 
+});
 
 var ProductsSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     brand: {
         type: brand,
-        require : true,
+        require: true,
     },
-    ingredients:{
-        type : [IngredientsSchema]
+    ingredients: {
+        type: [IngredientsSchema]
     },
     name: {
         type: String,
-        require : true,
+        require: true,
         unique: true,
     },
     description: String,
-    isVegan:{
+    isVegan: {
         type: Boolean,
     },
-    isVeganVerify:{
+    isVeganVerify: {
         type: Boolean,
-        require : true,
+        require: true,
     },
-    isCrueltyFreeVerify:{
+    isCrueltyFreeVerify: {
         type: Boolean,
-        require : true,
+        require: true,
     },
-    isCrueltyFree:{
+    isCrueltyFree: {
         type: Boolean,
     },
-    barcode : {
+    barcode: {
         type: String,
     },
-    active:{
+    active: {
         type: Boolean,
-        require : true,
+        require: true,
     },
-},{
-    versionKey:false
-});
+    productImage: { type: String, required: true },
+}, {
+        versionKey: false
+    });
 
-module.exports = mongoose.model("Product",ProductsSchema);
+module.exports = mongoose.model("Product", ProductsSchema);
