@@ -3,7 +3,8 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var Product = require('../models/product')
 var Ingredient = require('../models/ingredientsAnimalOrigin')
-//const authMiddleware = require('../middlewares/auth')
+var Search = require('../models/search')
+const authMiddleware = require('../middlewares/auth')
 const multer = require('multer');
 
 
@@ -36,14 +37,34 @@ const upload = multer({
 
 //router.use(authMiddleware);
 /* GET produtos listing. */
-router.get('/', function (req, res, next) {
-  Product.find(function (err, products) {
+router.get('/',function (req, res, next) {
+  Product.find({active: true},function (err, products) {
     if (err) {
       res.status(500).send(err);
     }
     else
       res.json(products);
   });
+});
+
+
+/*  GET product by pendent */
+router.get('/pendent/:pendent', function (req, res, next) {
+  console.log("search product to name", req.params.name)
+  const { pendent } = req.params;
+  if (pendent == undefined)
+    return res.status(400).send({ status: "error", error: "needs send value" });
+
+  Product.find({
+    active: pendent,
+  }).then(data => {
+    if (data.length == 0)
+      return res.status(400).send({ status: "error", error: "Product not found" });
+
+    res.status(200).send(data);
+  }).catch(e => {
+    return res.status(400).send({ error: "Error" });
+  })
 });
 
 /* GET produtos by id listing. */
@@ -81,8 +102,14 @@ router.get('/name/:name', function (req, res, next) {
     name: { "$regex": name, "$options": "i" }
   }).then(data => {
     if (data.length == 0)
+    {
+      var search = new Search();
+      search.name = name;
+      search.verify = false;
+      search.save(function (error) {
+      });
       return res.status(400).send({ status: "error", error: "Product not found" });
-
+    }
     res.status(200).send(data);
   }).catch(e => {
     return res.status(400).send({ error: "Error" });
@@ -102,8 +129,14 @@ router.get('/barcode/:barcode', function (req, res, next) {
     barcode: barcode
   }).then(data => {
     if (data.length == 0)
+    {
+      var search = new Search();
+      search.name = barcode;
+      search.verify = false;
+      search.save(function (error) {
+      });
       return res.status(400).send({ status: "error", error: "Product not found" });
-
+    }
     res.status(200).send(data);
   }).catch(e => {
     return res.status(400).send({ error: "error" });
@@ -111,7 +144,7 @@ router.get('/barcode/:barcode', function (req, res, next) {
 });
 
 /* POST product */
-router.post('/', upload.single('productImage'), async (req, res) => {
+router.post('/',authMiddleware, upload.single('productImage'), async (req, res) => {
   console.log("POST");
   if (req.file != undefined)
     console.log(req.file);
@@ -128,7 +161,7 @@ router.post('/', upload.single('productImage'), async (req, res) => {
 
   var product = new Product();
   product._id = new mongoose.Types.ObjectId(),
-    product.brand = req.body.brand;
+  product.brand = req.body.brand;
   product.name = req.body.name;
   product.description = req.body.description;
   product.isCrueltyFree = req.body.isCrueltyFree;
@@ -144,11 +177,11 @@ router.post('/', upload.single('productImage'), async (req, res) => {
 
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
-    if (await Ingredient.findOne({ 'nameEnglish': element.nameEnglish })) {
+    if (await Ingredient.findOne({ 'nameEnglish': element.name })) {
       product.isVegan = false;
       return true;
     }
-    if (await Ingredient.findOne({ 'namePortuguese': element.namePortuguese })) {
+    if (await Ingredient.findOne({ 'namePortuguese': element.name })) {
       product.isVegan = false;
       return true;
     }
@@ -167,7 +200,7 @@ router.post('/', upload.single('productImage'), async (req, res) => {
 
 
 /* put produtos listing. */
-router.put('/:id', upload.single('productImage'), async (req, res) => {
+router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res) => {
   console.log("PUT ", req.params.id);
 
   const { id } = req.params;
@@ -184,14 +217,29 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
     if (!product)
       return res.status(200).json({ status: "error", message: 'product not found' });
 
-    product.name = req.body.name;
-    product.description = req.body.description;
-    product.isVegan = req.body.isVegan;
-    product.isCrueltyFree = req.body.isCrueltyFree;
-    product.barcode = req.body.barcode;
-    product.active = req.body.active;
-    product.isVeganVerify = req.body.isVeganVerify;
-    product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;
+    if(req.body.name != undefined)
+      product.name = req.body.name;
+    
+    if(req.body.description != undefined)
+      product.description = req.body.description;
+    
+    if(req.body.isVegan != undefined)
+      product.isVegan = req.body.isVegan;
+    
+    if(req.body.isCrueltyFree != undefined)
+      product.isCrueltyFree = req.body.isCrueltyFree;
+    
+    if(req.body.barcode != undefined)
+      product.barcode = req.body.barcode;
+
+    if(req.body.active != undefined)
+      product.active = req.body.active;
+    
+    if(req.body.isVeganVerify != undefined)
+      product.isVeganVerify = req.body.isVeganVerify;
+    
+    if(req.body.isCrueltyFreeVerify != undefined)
+      product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;
 
     if(req.body.brand != undefined)
       req.body.brand.name
@@ -202,11 +250,11 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
     if (req.body.ingredients != undefined) {
       await asyncForEach(req.body.ingredients, async (element) => {
         product.isVeganVerify = true;
-        if (await Ingredient.findOne({ 'nameEnglish': element.nameEnglish })) {
+        if (await Ingredient.findOne({ 'nameEnglish': element.name })) {
           product.isVegan = false;
           return true;
         }
-        if (await Ingredient.findOne({ 'namePortuguese': element.namePortuguese })) {
+        if (await Ingredient.findOne({ 'namePortuguese': element.name })) {
           product.isVegan = false;
           return true;
         }
@@ -214,8 +262,6 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
 
       product.ingredients = req.body.ingredients;
     }
-
-   
 
     product.save(function (error) {
       if (error)
@@ -232,7 +278,7 @@ async function asyncForEach(array, callback) {
   }
 }
 /* DELETE product listing. */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id',authMiddleware, async (req, res) => {
   console.log("Delete ", req.params.id);
   const { id } = req.params;
 

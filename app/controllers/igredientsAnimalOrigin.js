@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var mongoose = require('mongoose');
 var Ingredient = require('../models/ingredientsAnimalOrigin')
-//const authMiddleware = require('../middlewares/auth')
+const authMiddleware = require('../middlewares/auth')
 
 //router.use(authMiddleware);
 /* GET produtos listing. */
@@ -80,7 +80,7 @@ router.get('/NameEnglish/:name', function(req, res, next) {
 });
 
 /* POST product */
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware,async (req, res) => {
   console.log("POST");
   const nameEnglish = req.body.nameEnglish;
   const namePortuguese = req.body.namePortuguese;
@@ -119,7 +119,7 @@ router.post('/', async (req, res) => {
   });
 
 /* put produtos listing. */
-router.put('/:id', function(req, res, next) {
+router.put('/:id',authMiddleware, function(req, res, next) {
   console.log("PUT ", req.params.id);
   const nameEnglish = req.body.nameEnglish;
   const namePortuguese = req.body.namePortuguese;
@@ -150,7 +150,7 @@ router.put('/:id', function(req, res, next) {
   });
 });
 /* DELETE product listing. */
-router.delete('/:id',  async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   console.log("Delete ", req.params.id);
   const{ id } = req.params;
 

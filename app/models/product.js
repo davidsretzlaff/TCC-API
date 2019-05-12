@@ -14,13 +14,10 @@ let brand = new Schema({
 //schema ingredients
 var IngredientsSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    namePortuguese: {
+    name: {
         type: String,
         require: true,
-    },
-    nameEnglish: {
-        type: String,
-    },
+    }
 });
 
 var ProductsSchema = new Schema({
