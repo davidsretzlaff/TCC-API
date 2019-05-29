@@ -10,6 +10,33 @@ let brand = new Schema({
         unique: false,
     },
 });
+// user to like/dislike/comments
+const UserSchema = new mongoose.Schema({
+    id_:mongoose.Schema.Types.ObjectId,
+    name: {
+        type: String,
+        require: true,
+    }, 
+    email: {
+        type: String,
+        required: true,
+        lowercase: true,
+    },
+});
+
+const LikeSchema = new mongoose.Schema({
+    user: {
+        type: UserSchema,
+        required: true,
+    },
+});
+
+const Dislikechema = new mongoose.Schema({
+    user: {
+        type: UserSchema,
+        required: true,
+    },
+});
 
 //schema ingredients
 var IngredientsSchema = new Schema({
@@ -55,6 +82,18 @@ var ProductsSchema = new Schema({
     active: {
         type: Boolean,
         require: true,
+    },
+    link: {
+        type: String,
+    },
+    linkPeta: {
+        type: String,
+    },
+    like: {
+        type: [LikeSchema],
+    },
+    dislike: {
+        type: [Dislikechema],
     },
     productImage: { type: String, required: true },
 }, {

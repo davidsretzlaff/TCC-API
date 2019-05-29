@@ -41,14 +41,14 @@ if (!id.match(/^[0-9a-fA-F]{24}$/))
 });
 
 /*  GET product by name */
-router.get('/nameEnglish/:name', function(req, res, next) {
+router.get('/name/:name', function(req, res, next) {
   console.log("search product to name",req.params.name)
   const{ name } = req.params;
   if(name == undefined || name.length < 3)
     return res.status(400).send({ status: "error",error: "needs at least 3 characters" });
 
   Ingredient.find({
-    namePortuguese:  { "$regex": name, "$options": "i" },
+    name:  { "$regex": name, "$options": "i" },
   }).then(data => {
     if(data.length == 0)
       return res.status(400).send({status: "error", error: "ingredients not found" });
@@ -59,56 +59,24 @@ router.get('/nameEnglish/:name', function(req, res, next) {
   })
 });
 
-
-/*  GET product by barcode */
-router.get('/NameEnglish/:name', function(req, res, next) {
-    console.log("search product to name",req.params.name)
-    const{ name } = req.params;
-    if(name == undefined || name.length < 3)
-      return res.status(400).send({ status: "error",error: "needs at least 3 characters" });
-  
-    Ingredient.find({
-      nameEnglish:  { "$regex": name, "$options": "i" },
-    }).then(data => {
-      if(data.length == 0)
-        return res.status(400).send({status: "error", error: "Ingredient not found" });
-  
-      res.status(200).send(data);
-    }).catch(e => {
-      return res.status(400).send({ error: "Error" });
-    })
-});
-
 /* POST product */
 router.post('/', authMiddleware,async (req, res) => {
   console.log("POST");
-  const nameEnglish = req.body.nameEnglish;
-  const namePortuguese = req.body.namePortuguese;
+  const name = req.body.name;
 
-  if(!nameEnglish)
+  if(!name)
   {
     return res.status(400).send({status: "error", error: "name is required" });
   }
 
-  if(!namePortuguese)
-  {
-    return res.status(400).send({status: "error", error: "name is required" });
-  }
-
-  if(await Ingredient.findOne({namePortuguese}))
-  {
-    return res.status(400).send({status: "error", error: "Ingredient already exist" });
-  }
-
-  if(await Ingredient.findOne({nameEnglish}))
+  if(await Ingredient.findOne({name}))
   {
     return res.status(400).send({status: "error", error: "Ingredient already exist" });
   }
 
     var ingredient = new Ingredient();
     ingredient._id = new mongoose.Types.ObjectId(),
-    ingredient.nameEnglish = nameEnglish;
-    ingredient.namePortuguese = namePortuguese;
+    ingredient.name = name;
     
     ingredient.save(function(error) {
       if(error)
@@ -121,30 +89,29 @@ router.post('/', authMiddleware,async (req, res) => {
 /* put produtos listing. */
 router.put('/:id',authMiddleware, function(req, res, next) {
   console.log("PUT ", req.params.id);
-  const nameEnglish = req.body.nameEnglish;
-  const namePortuguese = req.body.namePortuguese;
-  
+  const name = req.body.name;
+
   const{ id } = req.params;
 
   if(id == undefined )
-    return res.status(400).send({status: "error", error: "need to pass id " });
+    return res.status(400).send({status: "error", error: "Need to pass id " });
   
   if (!id.match(/^[0-9a-fA-F]{24}$/)) 
     return res.status(400).send({status: "error", error: "Wrong id format" });
+  
+  if(name == undefined)
+    return res.status(400).send({status: "error", error: "Unfilled name" });
 
   Ingredient.findById(id, function(error, ingredient) {
     if(error) 
       res.send(error);    
     if(!ingredient)
       return res.status(200).json({status: "error", message: 'Ingredient not found' });
-      
-    ingredient.nameEnglish = nameEnglish;
-    ingredient.namePortuguese = namePortuguese;
 
+    ingredient.name = name;
     ingredient.save(function(error) {
     if(error)
       res.send(error);
-    //Se não teve erro, retorna response normal (200)
     res.sendStatus(200);
   });
   });

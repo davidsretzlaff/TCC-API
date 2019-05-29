@@ -3,6 +3,8 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var Product = require('../models/product')
 var Ingredient = require('../models/ingredientsAnimalOrigin')
+var Brand = require('../models/brand')
+var User = require('../models/user')
 var Search = require('../models/search')
 const authMiddleware = require('../middlewares/auth')
 const multer = require('multer');
@@ -171,20 +173,28 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
   product.isVeganVerify = false;
   product.isVegan = true;
   product.isCrueltyFree = req.body.isCrueltyFree;
+  product.link = req.body.link;
+  product.linkPeta = req.body.linkPeta;
+
+  if(req.body.brand != undefined && req.body.brand.name != undefined){
+    if (await Brand.findOne({ 'name': req.body.brand.name , 'isCrueltyFree' : false})) {
+      product.isCrueltyFree = false;
+      product.isCrueltyFreeVerify = true;
+    }
+  }
 
   if (req.file.path != undefined)
     product.productImage = req.file.path;
 
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
-    if (await Ingredient.findOne({ 'nameEnglish': element.name })) {
-      product.isVegan = false;
-      return true;
-    }
-    if (await Ingredient.findOne({ 'namePortuguese': element.name })) {
-      product.isVegan = false;
-      return true;
-    }
+    if(element != undefined)
+    {
+      if (await Ingredient.findOne({ 'name': element.name })) {
+        product.isVegan = false;
+        return true;
+      }
+    }  
   });
 
   product.ingredients = req.body.ingredients;
@@ -247,14 +257,23 @@ router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res
     if (req.file != undefined)
       product.productImage = req.file.path;
 
+    if (req.body.link != undefined)
+      product.link = req.body.link;
+    
+    if (req.body.linkPeta != undefined)
+      product.linkPeta = req.body.linkPeta;
+    
+    if(req.body.brand != undefined && req.body.brand.name != undefined){
+      if (await Brand.findOne({ 'name': req.body.brand.name , 'isCrueltyFree' : false})) {
+        product.isCrueltyFree = false;
+        product.isCrueltyFreeVerify = true;
+      }
+    }
+    
     if (req.body.ingredients != undefined) {
       await asyncForEach(req.body.ingredients, async (element) => {
-        product.isVeganVerify = true;
-        if (await Ingredient.findOne({ 'nameEnglish': element.name })) {
-          product.isVegan = false;
-          return true;
-        }
-        if (await Ingredient.findOne({ 'namePortuguese': element.name })) {
+        product.isVeganVerify = true;       
+        if (await Ingredient.findOne({ 'name': element.name })) {
           product.isVegan = false;
           return true;
         }
@@ -269,6 +288,166 @@ router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res
       //Se não teve erro, retorna response normal (200)
       res.sendStatus(200);
     });
+  });
+});
+
+/*PUT LIKE Product*/
+router.put('/like/:id', authMiddleware, async (req, res) => {
+  console.log("PUT ", req.params.id);
+
+  const { id } = req.params;
+
+  if (id == undefined)
+    return res.status(400).send({ status: "error", error: "need to pass id " });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ status: "error", error: "Wrong id format" });
+
+  Product.findById(id, async function (error, product) {
+    if (error)
+      res.send(error);
+
+    if (!product)
+      return res.status(200).json({ status: "error", message: 'product not found' });
+
+  
+//
+await User.findOne( {'email': req.body.email}, await function (error, user) {
+  if (error)
+    res.send(error);
+}).then(user => {
+  if (!user)
+    return res.status(400).send({ status: "error", error: "User not found" });
+  
+  
+  for(var i = 0 ; i < product.like.length ; i ++)
+  {
+      if(product.like[i].user.email == user.email)
+      {
+        return res.status(400).send({ status: "error", error: "User already likes it" })
+      }
+  }
+  for(var i = 0 ; i < product.dislike.length ; i ++)
+  {
+      if(product.dislike[i].user.email == user.email)
+      {        
+        product.dislike.pull(product.dislike[i]);
+      }
+  }
+  const UserSchema = new mongoose.Schema({
+   id_:mongoose.Schema.Types.ObjectId,
+    name: {
+        type: String,
+        require: true,
+    }, 
+    email: {
+        type: String,
+        required: true,
+        lowercase: true,
+    },
+  });
+  const LikeSchema = new mongoose.Schema({
+      user: {
+          type: UserSchema,
+          required: true,
+      },
+  });     
+  UserSchema.name = user.name;
+  UserSchema.email = user.email;
+  UserSchema.id = user.id;
+  LikeSchema.user = UserSchema;
+  product.like.push(LikeSchema);
+  product.save(function (error) {
+    if (error)
+      res.send(error);
+    res.status(200).json({ status: "success", message: 'Liked it added to the product!' });
+    });
+    
+  }).catch(e => {
+    return res.status(400).send({ error: "Error" });
+  })
+  
+  });
+});
+
+/*PUT dislike Product*/
+router.put('/dislike/:id', authMiddleware, async (req, res) => {
+  console.log("PUT ", req.params.id);
+
+  const { id } = req.params;
+
+  if (id == undefined)
+    return res.status(400).send({ status: "error", error: "need to pass id " });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ status: "error", error: "Wrong id format" });
+
+  Product.findById(id, async function (error, product) {
+    if (error)
+      res.send(error);
+
+    if (!product)
+      return res.status(200).json({ status: "error", message: 'product not found' });
+
+  
+//
+await User.findOne( {'email': req.body.email}, await function (error, user) {
+  if (error)
+    res.send(error);
+}).then(user => {
+  if (!user)
+    return res.status(400).send({ status: "error", error: "User not found" });
+  
+ 
+  for(var i = 0 ; i < product.dislike.length ; i ++)
+  {
+      if(product.dislike[i].user.email == user.email)
+      {
+        return res.status(400).send({ status: "error", error: "User already dislikes it" })
+      }
+  }
+
+  for(var i = 0 ; i < product.like.length ; i ++)
+  {
+    if(product.like[i].user.email == user.email)
+    {        
+      product.like.pull(product.like[i]);
+    }
+  }
+
+  const UserSchema = new mongoose.Schema({
+   id_:mongoose.Schema.Types.ObjectId,
+    name: {
+        type: String,
+        require: true,
+    }, 
+    email: {
+        type: String,
+        required: true,
+        lowercase: true,
+    },
+  });
+  const LikeSchema = new mongoose.Schema({
+      user: {
+          type: UserSchema,
+          required: true,
+      },
+  });     
+  UserSchema.name = user.name;
+  UserSchema.email = user.email;
+  UserSchema.id = user.id;
+  LikeSchema.user = UserSchema;
+  product.dislike.push(LikeSchema);
+  product.save(function (error) {
+    if (error)
+      res.send(error);
+    res.status(200).json({ status: "success", message: 'Dislike it added to the product!' });
+    });
+    
+  }).catch(e => {
+    return res.status(400).send({ error: "Error" });
+  })
+  
   });
 });
 
