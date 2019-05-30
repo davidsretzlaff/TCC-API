@@ -367,5 +367,82 @@ router.put('/dislike/:id', authMiddleware, async (req, res) => {
 
   });
 });
+
+
+/*PUT comments brand*/
+router.put('/comments/:id', authMiddleware, async (req, res) => {
+  console.log("PUT ", req.params.id);
+
+  const { id } = req.params;
+
+  if (id == undefined)
+    return res.status(400).send({ status: "error", error: "need to pass id " });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ status: "error", error: "Wrong id format" });
+
+  // searching product
+  Brand.findById(id, async function (error, brand) {
+    if (error)
+      res.send(error);
+
+    if (!brand)
+      return res.status(200).json({ status: "error", message: 'product not found' });
+
+
+    // searching user
+    await User.findOne({ 'email': req.body.email }, await function (error, user) {
+      if (error)
+        res.send(error);
+    }).then(user => {
+      if (!user)
+        return res.status(400).send({ status: "error", error: "User not found" });
+
+      const UserSchema = new mongoose.Schema({
+        id_: mongoose.Schema.Types.ObjectId,
+        name: {
+          type: String,
+          require: true,
+        },
+        email: {
+          type: String,
+          required: true,
+          lowercase: true,
+        },
+      });
+
+      const CommentsSchema = new mongoose.Schema({
+        user: {
+            type: UserSchema,
+            required: true,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
+        description:{
+            type: String, 
+            required : true
+        }
+    });
+      UserSchema.name = user.name;
+      UserSchema.email = user.email;
+      UserSchema.id = user.id;
+      CommentsSchema.user = UserSchema;
+      CommentsSchema.description  = req.body.description;
+      brand.comments.push(CommentsSchema);
+      brand.save(function (error) {
+        if (error)
+          res.send(error);
+        res.status(200).json({ status: "success", message: 'comment it added to the brand!' });
+      });
+
+    }).catch(e => {
+      return res.status(400).send({ error: "Error" });
+    })
+
+  });
+});
+
 module.exports = app => app.use('/brand', router);
 

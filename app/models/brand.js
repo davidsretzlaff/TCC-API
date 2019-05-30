@@ -37,6 +37,25 @@ const Dislikechema = new mongoose.Schema({
         required: true,
     },
 });
+
+
+// schema comments
+const CommentsSchema = new mongoose.Schema({
+    user: {
+        type: UserSchema,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    description:{
+        type: String, 
+        required : true
+    },
+
+});
+
 var BrandsSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     name: {
@@ -68,6 +87,9 @@ var BrandsSchema = new Schema({
     },
     dislike: {
         type: [Dislikechema],
+    },
+    comments:{
+        type: [CommentsSchema]
     },
     brandImage: { type: String},
 },{

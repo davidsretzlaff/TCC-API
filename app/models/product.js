@@ -47,6 +47,22 @@ var IngredientsSchema = new Schema({
     }
 });
 
+// schema comments
+const CommentsSchema = new mongoose.Schema({
+    user: {
+        type: UserSchema,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    description:{
+        type: String, 
+        required : true
+    }
+});
+
 var ProductsSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     brand: {
@@ -94,6 +110,9 @@ var ProductsSchema = new Schema({
     },
     dislike: {
         type: [Dislikechema],
+    },
+    comments:{
+        type: [CommentsSchema]
     },
     productImage: { type: String, required: true },
 }, {

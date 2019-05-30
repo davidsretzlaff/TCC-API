@@ -39,8 +39,8 @@ const upload = multer({
 
 //router.use(authMiddleware);
 /* GET produtos listing. */
-router.get('/',function (req, res, next) {
-  Product.find({active: true},function (err, products) {
+router.get('/', function (req, res, next) {
+  Product.find({ active: true }, function (err, products) {
     if (err) {
       res.status(500).send(err);
     }
@@ -103,8 +103,7 @@ router.get('/name/:name', function (req, res, next) {
     active: true,
     name: { "$regex": name, "$options": "i" }
   }).then(data => {
-    if (data.length == 0)
-    {
+    if (data.length == 0) {
       var search = new Search();
       search.name = name;
       search.verify = false;
@@ -130,8 +129,7 @@ router.get('/barcode/:barcode', function (req, res, next) {
     active: true,
     barcode: barcode
   }).then(data => {
-    if (data.length == 0)
-    {
+    if (data.length == 0) {
       var search = new Search();
       search.name = barcode;
       search.verify = false;
@@ -146,7 +144,7 @@ router.get('/barcode/:barcode', function (req, res, next) {
 });
 
 /* POST product */
-router.post('/',authMiddleware, upload.single('productImage'), async (req, res) => {
+router.post('/', authMiddleware, upload.single('productImage'), async (req, res) => {
   console.log("POST");
   if (req.file != undefined)
     console.log(req.file);
@@ -177,8 +175,8 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
   product.linkPeta = req.body.linkPeta;
 
   // Checks if brand is cruelty free, if is not so add information in product 
-  if(req.body.brand != undefined && req.body.brand.name != undefined){
-    if (await Brand.findOne({ 'name': req.body.brand.name , 'isCrueltyFree' : false})) {
+  if (req.body.brand != undefined && req.body.brand.name != undefined) {
+    if (await Brand.findOne({ 'name': req.body.brand.name, 'isCrueltyFree': false })) {
       product.isCrueltyFree = false;
       product.isCrueltyFreeVerify = true;
     }
@@ -188,22 +186,16 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
   if (req.file.path != undefined)
     product.productImage = req.file.path;
 
-    // if (await Ingredient.find()) {
-    //   product.isCrueltyFree = false;
-    //   product.isCrueltyFreeVerify = true;
-    // }
-
   // checks if ingredients dont contains in ingredients table animal origin
   // if contains, so add false vegan in product
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
-    if(element != undefined)
-    {
+    if (element != undefined) {
       if (await Ingredient.findOne({ 'name': element.name })) {
         product.isVegan = false;
         return true;
       }
-    }  
+    }
   });
 
   product.ingredients = req.body.ingredients;
@@ -217,7 +209,7 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
 });
 
 /* put produtos listing. */
-router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res) => {
+router.put('/:id', authMiddleware, upload.single('productImage'), async (req, res) => {
   console.log("PUT ", req.params.id);
 
   const { id } = req.params;
@@ -234,52 +226,52 @@ router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res
     if (!product)
       return res.status(200).json({ status: "error", message: 'product not found' });
 
-    if(req.body.name != undefined)
+    if (req.body.name != undefined)
       product.name = req.body.name;
-    
-    if(req.body.description != undefined)
+
+    if (req.body.description != undefined)
       product.description = req.body.description;
-    
-    if(req.body.isVegan != undefined)
+
+    if (req.body.isVegan != undefined)
       product.isVegan = req.body.isVegan;
-    
-    if(req.body.isCrueltyFree != undefined)
+
+    if (req.body.isCrueltyFree != undefined)
       product.isCrueltyFree = req.body.isCrueltyFree;
-    
-    if(req.body.barcode != undefined)
+
+    if (req.body.barcode != undefined)
       product.barcode = req.body.barcode;
 
-    if(req.body.active != undefined)
+    if (req.body.active != undefined)
       product.active = req.body.active;
-    
-    if(req.body.isVeganVerify != undefined)
+
+    if (req.body.isVeganVerify != undefined)
       product.isVeganVerify = req.body.isVeganVerify;
-    
-    if(req.body.isCrueltyFreeVerify != undefined)
+
+    if (req.body.isCrueltyFreeVerify != undefined)
       product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;
 
-    if(req.body.brand != undefined)
+    if (req.body.brand != undefined)
       req.body.brand.name
-    
+
     if (req.file != undefined)
       product.productImage = req.file.path;
 
     if (req.body.link != undefined)
       product.link = req.body.link;
-    
+
     if (req.body.linkPeta != undefined)
       product.linkPeta = req.body.linkPeta;
-    
-    if(req.body.brand != undefined && req.body.brand.name != undefined){
-      if (await Brand.findOne({ 'name': req.body.brand.name , 'isCrueltyFree' : false})) {
+
+    if (req.body.brand != undefined && req.body.brand.name != undefined) {
+      if (await Brand.findOne({ 'name': req.body.brand.name, 'isCrueltyFree': false })) {
         product.isCrueltyFree = false;
         product.isCrueltyFreeVerify = true;
       }
     }
-    
+
     if (req.body.ingredients != undefined) {
       await asyncForEach(req.body.ingredients, async (element) => {
-        product.isVeganVerify = true;       
+        product.isVeganVerify = true;
         if (await Ingredient.findOne({ 'name': element.name })) {
           product.isVegan = false;
           return true;
@@ -310,6 +302,7 @@ router.put('/like/:id', authMiddleware, async (req, res) => {
   if (!id.match(/^[0-9a-fA-F]{24}$/))
     return res.status(400).send({ status: "error", error: "Wrong id format" });
 
+  // searching product
   Product.findById(id, async function (error, product) {
     if (error)
       res.send(error);
@@ -317,63 +310,60 @@ router.put('/like/:id', authMiddleware, async (req, res) => {
     if (!product)
       return res.status(200).json({ status: "error", message: 'product not found' });
 
-  
-//
-await User.findOne( {'email': req.body.email}, await function (error, user) {
-  if (error)
-    res.send(error);
-}).then(user => {
-  if (!user)
-    return res.status(400).send({ status: "error", error: "User not found" });
-  
-  
-  for(var i = 0 ; i < product.like.length ; i ++)
-  {
-      if(product.like[i].user.email == user.email)
-      {
-        return res.status(400).send({ status: "error", error: "User already likes it" })
+
+    // searching user
+    await User.findOne({ 'email': req.body.email }, await function (error, user) {
+      if (error)
+        res.send(error);
+    }).then(user => {
+      if (!user)
+        return res.status(400).send({ status: "error", error: "User not found" });
+
+      // checks if user already like product
+      for (var i = 0; i < product.like.length; i++) {
+        if (product.like[i].user.email == user.email) {
+          return res.status(400).send({ status: "error", error: "User already likes it" })
+        }
       }
-  }
-  for(var i = 0 ; i < product.dislike.length ; i ++)
-  {
-      if(product.dislike[i].user.email == user.email)
-      {        
-        product.dislike.pull(product.dislike[i]);
+      // checks if user already dislik product and remove
+      for (var i = 0; i < product.dislike.length; i++) {
+        if (product.dislike[i].user.email == user.email) {
+          product.dislike.pull(product.dislike[i]);
+        }
       }
-  }
-  const UserSchema = new mongoose.Schema({
-   id_:mongoose.Schema.Types.ObjectId,
-    name: {
-        type: String,
-        require: true,
-    }, 
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
-    },
-  });
-  const LikeSchema = new mongoose.Schema({
-      user: {
+      const UserSchema = new mongoose.Schema({
+        id_: mongoose.Schema.Types.ObjectId,
+        name: {
+          type: String,
+          require: true,
+        },
+        email: {
+          type: String,
+          required: true,
+          lowercase: true,
+        },
+      });
+      const LikeSchema = new mongoose.Schema({
+        user: {
           type: UserSchema,
           required: true,
-      },
-  });     
-  UserSchema.name = user.name;
-  UserSchema.email = user.email;
-  UserSchema.id = user.id;
-  LikeSchema.user = UserSchema;
-  product.like.push(LikeSchema);
-  product.save(function (error) {
-    if (error)
-      res.send(error);
-    res.status(200).json({ status: "success", message: 'Liked it added to the product!' });
-    });
-    
-  }).catch(e => {
-    return res.status(400).send({ error: "Error" });
-  })
-  
+        },
+      });
+      UserSchema.name = user.name;
+      UserSchema.email = user.email;
+      UserSchema.id = user.id;
+      LikeSchema.user = UserSchema;
+      product.like.push(LikeSchema);
+      product.save(function (error) {
+        if (error)
+          res.send(error);
+        res.status(200).json({ status: "success", message: 'Liked it added to the product!' });
+      });
+
+    }).catch(e => {
+      return res.status(400).send({ error: "Error" });
+    })
+
   });
 });
 
@@ -389,6 +379,7 @@ router.put('/dislike/:id', authMiddleware, async (req, res) => {
   if (!id.match(/^[0-9a-fA-F]{24}$/))
     return res.status(400).send({ status: "error", error: "Wrong id format" });
 
+  // searching product
   Product.findById(id, async function (error, product) {
     if (error)
       res.send(error);
@@ -396,65 +387,137 @@ router.put('/dislike/:id', authMiddleware, async (req, res) => {
     if (!product)
       return res.status(200).json({ status: "error", message: 'product not found' });
 
-  
-//
-await User.findOne( {'email': req.body.email}, await function (error, user) {
-  if (error)
-    res.send(error);
-}).then(user => {
-  if (!user)
-    return res.status(400).send({ status: "error", error: "User not found" });
-  
- 
-  for(var i = 0 ; i < product.dislike.length ; i ++)
-  {
-      if(product.dislike[i].user.email == user.email)
-      {
-        return res.status(400).send({ status: "error", error: "User already dislikes it" })
+
+    // searching user
+    await User.findOne({ 'email': req.body.email }, await function (error, user) {
+      if (error)
+        res.send(error);
+    }).then(user => {
+      if (!user)
+        return res.status(400).send({ status: "error", error: "User not found" });
+
+      // checks if user already like product
+      for (var i = 0; i < product.dislike.length; i++) {
+        if (product.dislike[i].user.email == user.email) {
+          return res.status(400).send({ status: "error", error: "User already dislikes it" })
+        }
       }
-  }
+      // checks if user already dislike product and remove
+      for (var i = 0; i < product.like.length; i++) {
+        if (product.like[i].user.email == user.email) {
+          product.like.pull(product.like[i]);
+        }
+      }
 
-  for(var i = 0 ; i < product.like.length ; i ++)
-  {
-    if(product.like[i].user.email == user.email)
-    {        
-      product.like.pull(product.like[i]);
-    }
-  }
-
-  const UserSchema = new mongoose.Schema({
-   id_:mongoose.Schema.Types.ObjectId,
-    name: {
-        type: String,
-        require: true,
-    }, 
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
-    },
-  });
-  const LikeSchema = new mongoose.Schema({
-      user: {
+      const UserSchema = new mongoose.Schema({
+        id_: mongoose.Schema.Types.ObjectId,
+        name: {
+          type: String,
+          require: true,
+        },
+        email: {
+          type: String,
+          required: true,
+          lowercase: true,
+        },
+      });
+      const LikeSchema = new mongoose.Schema({
+        user: {
           type: UserSchema,
           required: true,
-      },
-  });     
-  UserSchema.name = user.name;
-  UserSchema.email = user.email;
-  UserSchema.id = user.id;
-  LikeSchema.user = UserSchema;
-  product.dislike.push(LikeSchema);
-  product.save(function (error) {
+        },
+      });
+      UserSchema.name = user.name;
+      UserSchema.email = user.email;
+      UserSchema.id = user.id;
+      LikeSchema.user = UserSchema;
+      product.dislike.push(LikeSchema);
+      product.save(function (error) {
+        if (error)
+          res.send(error);
+        res.status(200).json({ status: "success", message: 'Dislike it added to the product!' });
+      });
+
+    }).catch(e => {
+      return res.status(400).send({ error: "Error" });
+    })
+
+  });
+});
+
+
+/*PUT comments Product*/
+router.put('/comments/:id', authMiddleware, async (req, res) => {
+  console.log("PUT ", req.params.id);
+
+  const { id } = req.params;
+
+  if (id == undefined)
+    return res.status(400).send({ status: "error", error: "need to pass id " });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ status: "error", error: "Wrong id format" });
+
+  // searching product
+  Product.findById(id, async function (error, product) {
     if (error)
       res.send(error);
-    res.status(200).json({ status: "success", message: 'Dislike it added to the product!' });
+
+    if (!product)
+      return res.status(200).json({ status: "error", message: 'product not found' });
+
+
+    // searching user
+    await User.findOne({ 'email': req.body.email }, await function (error, user) {
+      if (error)
+        res.send(error);
+    }).then(user => {
+      if (!user)
+        return res.status(400).send({ status: "error", error: "User not found" });
+
+      const UserSchema = new mongoose.Schema({
+        id_: mongoose.Schema.Types.ObjectId,
+        name: {
+          type: String,
+          require: true,
+        },
+        email: {
+          type: String,
+          required: true,
+          lowercase: true,
+        },
+      });
+
+      const CommentsSchema = new mongoose.Schema({
+        user: {
+            type: UserSchema,
+            required: true,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
+        description:{
+            type: String, 
+            required : true
+        }
     });
-    
-  }).catch(e => {
-    return res.status(400).send({ error: "Error" });
-  })
-  
+      UserSchema.name = user.name;
+      UserSchema.email = user.email;
+      UserSchema.id = user.id;
+      CommentsSchema.user = UserSchema;
+      CommentsSchema.description  = req.body.description;
+      product.comments.push(CommentsSchema);
+      product.save(function (error) {
+        if (error)
+          res.send(error);
+        res.status(200).json({ status: "success", message: 'comment it added to the product!' });
+      });
+
+    }).catch(e => {
+      return res.status(400).send({ error: "Error" });
+    })
+
   });
 });
 
@@ -464,7 +527,7 @@ async function asyncForEach(array, callback) {
   }
 }
 /* DELETE product listing. */
-router.delete('/:id',authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   console.log("Delete ", req.params.id);
   const { id } = req.params;
 
