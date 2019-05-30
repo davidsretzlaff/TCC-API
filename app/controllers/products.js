@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     cb(null, './uploads/');
   },
   filename: function (req, file, cb) {
-    cb(null, req.body.barcode + file.originalname);
+    cb(null, new Date().toISOString() + file.originalname);
   }
 });
 
@@ -176,6 +176,7 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
   product.link = req.body.link;
   product.linkPeta = req.body.linkPeta;
 
+  // Checks if brand is cruelty free, if is not so add information in product 
   if(req.body.brand != undefined && req.body.brand.name != undefined){
     if (await Brand.findOne({ 'name': req.body.brand.name , 'isCrueltyFree' : false})) {
       product.isCrueltyFree = false;
@@ -183,9 +184,17 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
     }
   }
 
+  // checks is image 
   if (req.file.path != undefined)
     product.productImage = req.file.path;
 
+    // if (await Ingredient.find()) {
+    //   product.isCrueltyFree = false;
+    //   product.isCrueltyFreeVerify = true;
+    // }
+
+  // checks if ingredients dont contains in ingredients table animal origin
+  // if contains, so add false vegan in product
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
     if(element != undefined)
@@ -206,8 +215,6 @@ router.post('/',authMiddleware, upload.single('productImage'), async (req, res) 
     res.sendStatus(201);
   });
 });
-
-
 
 /* put produtos listing. */
 router.put('/:id', authMiddleware,upload.single('productImage'), async (req, res) => {
