@@ -4,7 +4,21 @@ var mongoose = require('mongoose');
 var Ingredient = require('../models/ingredientsAnimalOrigin')
 const authMiddleware = require('../middlewares/auth')
 
-//router.use(authMiddleware);
+// CORS MIDDLEWARE
+router.use((req,res,next)=>{
+  // Origin of access control / CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Request methods you wish to allow
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  // Request headers you wish to allow
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Authorization, Accept, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Credentials');
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  // Pass to next layer of middleware
+  next();
+});
+router.use(authMiddleware);
 /* GET produtos listing. */
 router.get('/', function(req, res, next) {
     Ingredient.find(function(err,ingredients) {
