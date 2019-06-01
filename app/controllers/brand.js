@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 var Brand = require('../models/brand')
 const multer = require('multer');
 var User = require('../models/user')
-router.use(authMiddleware);
+
 
 // CORS MIDDLEWARE
 router.use((req,res,next)=>{
