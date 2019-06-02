@@ -151,15 +151,11 @@ router.put('/:id', authMiddleware, upload.single('brandImage'), function (req, r
   if (!id.match(/^[0-9a-fA-F]{24}$/))
     return res.status(400).send({ status: "error", error: "Wrong id format" });
 
-  Brand.findById(id, async function (error, brands) {
+  Brand.findById(id, async function (error, brand) {
     if (error)
       res.send(error);
-    if (!brands)
+    if (!brand)
       return res.status(200).json({ status: "error", message: 'brand not found' });
-
-    Brand.findById(req.params.id, function (error, brand) {
-      if (error)
-        res.send(error);
 
       if (req.body.name != undefined)
         brand.name = req.body.name;
@@ -175,7 +171,7 @@ router.put('/:id', authMiddleware, upload.single('brandImage'), function (req, r
         brand.linkPeta = req.body.linkPeta;
       if (req.body.link != undefined)
         brand.link = req.body.link;
-      if (req.file.path != undefined)
+      if (req.file != undefined && req.file.path != undefined)
         brand.brandImage = req.file.path
       brand.save(function (error) {
         if (error)
@@ -183,7 +179,7 @@ router.put('/:id', authMiddleware, upload.single('brandImage'), function (req, r
         //Se não teve erro, retorna response normal (200)
         res.sendStatus(200);
       });
-    });
+
   });
 });
 router.delete('/:id', authMiddleware, async (req, res) => {

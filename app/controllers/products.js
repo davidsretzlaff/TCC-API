@@ -268,7 +268,7 @@ router.put('/:id', authMiddleware, upload.single('productImage'), async (req, re
     if (req.body.brand != undefined)
       req.body.brand.name
 
-    if (req.file != undefined)
+    if (req.file != undefined && req.file.path != undefined)
       product.productImage = req.file.path;
 
     if (req.body.link != undefined)
