@@ -109,7 +109,7 @@ router.post('/', async (req, res) => {
 });
 
 /* put produtos listing. */
-router.put('/:id', function (req, res, next) {
+router.put('/:id', async function (req, res, next) {
   const { name, email, password } = req.body;
 
   if (email == undefined || password == undefined)

@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const mailer = require('../../modules/mailer');
 const authConfig = require("../../config/auth");
-
+const multer = require('multer');
 const router = express.Router();
 // CORS MIDDLEWARE
 router.use((req,res,next)=>{
@@ -26,6 +26,31 @@ router.use((req,res,next)=>{
 //         expiresIn: 86400,
 //     });
 //}
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './uploads/');
+    },
+    filename: function (req, file, cb) {
+      cb(null, new Date().toISOString() + file.originalname);
+    }
+  });
+  
+  const fileFilter = (req, file, cb) => {
+    // reject a file
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  };
+  
+  const upload = multer({
+    storage: storage,
+    limits: {
+      fileSize: 1024 * 1024 * 5
+    },
+    fileFilter: fileFilter
+  });
 router.post('/forgot_password', async(req,res) => {
     const{email} =req.body;
     
@@ -97,7 +122,7 @@ router.post('/reset_password', async(req,res) =>{
     }
 })
 
-router.post('/register', async (req,res)=>{
+router.post('/register', upload.single('image'),async (req,res)=>{
     const { email } = req.body;
     try{
         if(await User.findOne({ email }))
@@ -105,6 +130,9 @@ router.post('/register', async (req,res)=>{
         const user = await User.create(req.body);
 
         user.password = undefined;
+
+        if (req.file != undefined && req.file.path != undefined)
+            user.image = req.file.path;
 
         return res.send({
             user

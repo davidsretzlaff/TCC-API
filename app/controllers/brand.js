@@ -175,7 +175,7 @@ router.post('/', upload.single('brandImage'), async (req, res) => {
 
 
 /* PUT BRAND */
-router.put('/:id', upload.single('brandImage'), function (req, res, next) {
+router.put('/:id', upload.single('brandImage'), async function  (req, res, next) {
   const { email,password} = req.body;
   const { id } = req.params;
 
@@ -264,7 +264,7 @@ router.delete('/:id', async (req, res) => {
 
 
 /*  GET brand by pendent */
-router.get('/pendent/:pendent', function (req, res, next) {
+router.get('/pendent/:pendent', async function (req, res, next) {
   const { email,password} = req.body;
 
   if(email == undefined || password == undefined)
