@@ -29,6 +29,10 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         select: false,
     },
+    type:{
+        type : String,
+        default:"user",
+    },
 });
 
 UserSchema.pre('save', async function(next){

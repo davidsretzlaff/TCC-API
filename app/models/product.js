@@ -114,7 +114,7 @@ var ProductsSchema = new Schema({
     comments:{
         type: [CommentsSchema]
     },
-    productImage: { type: String, required: true },
+    productImage: { type: String, required: false },
 }, {
         versionKey: false
     });

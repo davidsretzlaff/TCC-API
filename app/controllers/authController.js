@@ -21,11 +21,11 @@ router.use((req,res,next)=>{
     // Pass to next layer of middleware
     next();
   });
-function generateToken(params = {}){
-    return token = jwt.sign(params, authConfig.secret, {
-        expiresIn: 86400,
-    });
-}
+// function generateToken(params = {}){
+//     return token = jwt.sign(params, authConfig.secret, {
+//         expiresIn: 86400,
+//     });
+//}
 router.post('/forgot_password', async(req,res) => {
     const{email} =req.body;
     
@@ -107,8 +107,8 @@ router.post('/register', async (req,res)=>{
         user.password = undefined;
 
         return res.send({
-            user,
-            token : generateToken({ id: user.id }),
+            user
+            // token : generateToken({ id: user.id }),
         });
     }catch(err){
         return res.status(400).send({error: 'Registration failed'});
@@ -144,8 +144,8 @@ router.post('/authenticate', async (req,res) =>{
     user.password = undefined;
 
     res.send({
-        user,
-        token : generateToken({ id: user.id }),
+        user
+          // token : generateToken({ id: user.id }),
     });
 });
 

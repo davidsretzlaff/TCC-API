@@ -48,6 +48,35 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
+async function checkLogin(email,password){
+  if(email == undefined)
+      return false;
+  
+  if(password == undefined)
+      return false;
+  
+  const user = await User.findOne({ email }).select('+password');
+
+  if( !user )
+    return false;
+  
+  if(!await bcrypt.compare(password, user.password))
+      return false;
+  
+  return true;
+}
+
+async function checkPermission(email){
+const user = await User.findOne({ email });
+
+if( !user )
+  return false;
+
+if(user.type != "admin")
+  return false;
+
+return true;
+}
 
 /* GET brands listing. */
 router.get('/', function (req, res, next) {
@@ -104,12 +133,18 @@ router.get('/name/:name', function (req, res, next) {
 });
 
 /* POST brand */
-router.post('/', authMiddleware, upload.single('brandImage'), async (req, res) => {
+router.post('/', upload.single('brandImage'), async (req, res) => {
+  const { email,password,name} = req.body;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+
   console.log("POST");
   if (req.file != undefined)
     console.log(req.file);
-
-  var name = req.body.name;
 
   if (!name) {
     return res.status(400).send({ status: "error", error: "name is required" });
@@ -140,10 +175,20 @@ router.post('/', authMiddleware, upload.single('brandImage'), async (req, res) =
 
 
 /* PUT BRAND */
-router.put('/:id', authMiddleware, upload.single('brandImage'), function (req, res, next) {
-  console.log("PUT ", req.params.id);
-
+router.put('/:id', upload.single('brandImage'), function (req, res, next) {
+  const { email,password} = req.body;
   const { id } = req.params;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+  
+  if(!await checkPermission(email))
+    return res.status(400).send({error: "Permission denied"})
+
+  console.log("PUT ", req.params.id);
 
   if (id == undefined)
     return res.status(400).send({ status: "error", error: "need to pass id " });
@@ -182,9 +227,20 @@ router.put('/:id', authMiddleware, upload.single('brandImage'), function (req, r
 
   });
 });
-router.delete('/:id', authMiddleware, async (req, res) => {
-  console.log("Delete ", req.params.id);
+router.delete('/:id', async (req, res) => {
+  const { email,password} = req.body;
   const { id } = req.params;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+  
+  if(!await checkPermission(email))
+    return res.status(400).send({error: "Permission denied"})
+
+  console.log("Delete ", req.params.id);
 
   if (id == undefined)
     return res.status(400).send({ error: "need to pass id " });
@@ -209,6 +265,17 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 /*  GET brand by pendent */
 router.get('/pendent/:pendent', function (req, res, next) {
+  const { email,password} = req.body;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+  
+  if(!await checkPermission(email))
+    return res.status(400).send({error: "Permission denied"})
+
   console.log("search brand to name", req.params.name)
   const { pendent } = req.params;
   if (pendent == undefined)
@@ -228,9 +295,17 @@ router.get('/pendent/:pendent', function (req, res, next) {
 
 
 /*PUT LIKE Brand*/
-router.put('/like/:id', authMiddleware, async (req, res) => {
-  console.log("PUT ", req.params.id);
+router.put('/like/:id', async (req, res) => {
+  const { email,password} = req.body;
   const { id } = req.params;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+
+  console.log("PUT ", req.params.id);
 
   if (id == undefined)
     return res.status(400).send({ status: "error", error: "Need to pass id " });
@@ -302,10 +377,17 @@ router.put('/like/:id', authMiddleware, async (req, res) => {
 });
 
 /*PUT dislike brand*/
-router.put('/dislike/:id', authMiddleware, async (req, res) => {
-  console.log("PUT ", req.params.id);
-
+router.put('/dislike/:id', async (req, res) => {
+  const { email,password} = req.body;
   const { id } = req.params;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+
+  console.log("PUT ", req.params.id);
 
   if (id == undefined)
     return res.status(400).send({ status: "error", error: "need to pass id " });
@@ -381,10 +463,17 @@ router.put('/dislike/:id', authMiddleware, async (req, res) => {
 
 
 /*PUT comments brand*/
-router.put('/comments/:id', authMiddleware, async (req, res) => {
-  console.log("PUT ", req.params.id);
-
+router.put('/comments/:id', async (req, res) => {
+  const { email,password} = req.body;
   const { id } = req.params;
+
+  if(email == undefined || password == undefined)
+    return res.status(400).send({error : "Need email and password for authentication "});
+  
+  if(!await checkLogin(email,password))
+    return res.status(400).send({error: "Authentication filed"})
+
+  console.log("PUT ", req.params.id);
 
   if (id == undefined)
     return res.status(400).send({ status: "error", error: "need to pass id " });
@@ -399,7 +488,6 @@ router.put('/comments/:id', authMiddleware, async (req, res) => {
 
     if (!brand)
       return res.status(200).json({ status: "error", message: 'product not found' });
-
 
     // searching user
     await User.findOne({ 'email': req.body.email }, await function (error, user) {
