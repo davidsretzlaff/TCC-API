@@ -58,7 +58,7 @@ router.post('/forgot_password', async(req,res) => {
           const user = await User.findOne({email});
 
           if(!user)
-            return res.status(400).send({ error: "User not found" });
+            return res.status(400).send({ error: "Usuário não encontrado" });
           
           const token = crypto.randomBytes(20).toString('hex');
 
@@ -80,7 +80,7 @@ router.post('/forgot_password', async(req,res) => {
           }, (err)=> {
                 if(err){
                     console.log(err);
-                    return res.status(400).send({error: 'Cannot send forgot password email'});
+                    return res.status(400).send({error: 'Não foi possível mandar email para recuperação de senha'});
                 }
                 return res.send();
 
@@ -99,15 +99,15 @@ router.post('/reset_password', async(req,res) =>{
             .select('+passwordResetToken passwordResetExpires');
         
         if(!user)
-            return res.status(400).send({ error: "User not found" });
+            return res.status(400).send({ error: "Usuarío nao encontrado" });
         
         if(token !== user.passwordResetToken)
-            return res.status(400).send({error: 'Token invalid'});
+            return res.status(400).send({error: 'Token inválido'});
 
         const now = new Date();
 
         if(now > user.passwordResetExpires)
-            return res.status(400).send({error: 'TOken expired, genereate a new one'});
+            return res.status(400).send({error: 'Token expirou, precisa gerar um novo token'});
         
         user.password = password;
 
@@ -118,7 +118,7 @@ router.post('/reset_password', async(req,res) =>{
 
 
     } catch (err) {
-        res.status(400).send({error: 'Cannot reset password, try again'});
+        res.status(400).send({error: 'Não foi possivel resetar a senha, tente novamente'});
     }
 })
 
@@ -126,7 +126,7 @@ router.post('/register', upload.single('image'),async (req,res)=>{
     const { email } = req.body;
     try{
         if(await User.findOne({ email }))
-            return res.status(400).send({ error: "user already exist" });
+            return res.status(400).send({ error: "Usuário já existe." });
         const user = await User.create(req.body);
 
         user.password = undefined;
@@ -139,7 +139,7 @@ router.post('/register', upload.single('image'),async (req,res)=>{
             // token : generateToken({ id: user.id }),
         });
     }catch(err){
-        return res.status(400).send({error: 'Registration failed'});
+        return res.status(400).send({error: 'Cadastro falhou, tente novamente'});
     }
 });
 
@@ -156,18 +156,18 @@ router.post('/authenticate', async (req,res) =>{
     const{ email, password } = req.body;
 
     if(email == undefined)
-        return res.status(400).send({error : "Need email for authentication "});
+        return res.status(400).send({error : "Precisa de email para autenticação"});
     
     if(password == undefined)
-        return res.status(400).send({error : "Need password for authentication "});
+        return res.status(400).send({error : "Precisa de senha para autenticação "});
     
     const user = await User.findOne({ email }).select('+password');
 
     if( !user )
-        return res.status(400).send({ error: "User not found" });
+        return res.status(400).send({ error: "Usuário não encontrado" });
     
     if(!await bcrypt.compare(password, user.password))
-        return res.status(400).send({ error: 'Invalid password' });
+        return res.status(400).send({ error: 'Senha invalida' });
 
     user.password = undefined;
 
