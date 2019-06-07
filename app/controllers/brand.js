@@ -48,24 +48,6 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-async function checkLogin(email,password){
-  if(email == undefined)
-      return false;
-  
-  if(password == undefined)
-      return false;
-  
-  const user = await User.findOne({ email }).select('+password');
-
-  if( !user )
-    return false;
-  
-  if(!await bcrypt.compare(password, user.password))
-      return false;
-  
-  return true;
-}
-
 async function checkPermission(email){
 const user = await User.findOne({ email });
 
@@ -124,7 +106,7 @@ router.get('/name/:name', function (req, res, next) {
     name: { "$regex": name, "$options": "i" }
   }).then(data => {
     if (data.length == 0)
-      return res.status(400).send({ status: "error", error: "Brand not found" });
+      return res.status(400).send({ status: "error", error: "Marca não encontrada" });
 
     res.status(200).send(data);
   }).catch(e => {
@@ -136,22 +118,16 @@ router.get('/name/:name', function (req, res, next) {
 router.post('/', upload.single('brandImage'), async (req, res) => {
   const { email,password,name} = req.body;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
-
   console.log("POST");
   if (req.file != undefined)
     console.log(req.file);
 
   if (!name) {
-    return res.status(400).send({ status: "error", error: "name is required" });
+    return res.status(400).send({ status: "error", error: "Precisa preencher o nome" });
   }
 
   if (await Brand.findOne({ name })) {
-    return res.status(400).send({ status: "error", error: "Brand already exist" });
+    return res.status(400).send({ status: "error", error: "Marca já existe" });
   }
   var brand = new Brand();
   brand._id = new mongoose.Types.ObjectId(),
@@ -162,7 +138,8 @@ router.post('/', upload.single('brandImage'), async (req, res) => {
   brand.linkPeta = req.body.linkPeta;
   brand.link = req.body.link;
   brand.ative = false;
-  if (req.file.path != undefined)
+
+  if (req.file != undefined && req.file.path != undefined)
     brand.brandImage = req.file.path;
 
   brand.save(function (error) {
@@ -182,8 +159,6 @@ router.put('/:id', upload.single('brandImage'), async function  (req, res, next)
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
   
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
   
   if(!await checkPermission(email))
     return res.status(400).send({error: "Permission denied"})
@@ -234,9 +209,6 @@ router.delete('/:id', async (req, res) => {
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
   
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
-  
   if(!await checkPermission(email))
     return res.status(400).send({error: "Permission denied"})
 
@@ -269,10 +241,7 @@ router.get('/pendent/:pendent', async function (req, res, next) {
 
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
-  
+
   if(!await checkPermission(email))
     return res.status(400).send({error: "Permission denied"})
 
@@ -296,14 +265,11 @@ router.get('/pendent/:pendent', async function (req, res, next) {
 
 /*PUT LIKE Brand*/
 router.put('/like/:id', async (req, res) => {
-  const { email,password} = req.body;
+  const { email} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
+  if(email == undefined)
+    return res.status(400).send({error : "Email inválido"});
 
   console.log("PUT ", req.params.id);
 
@@ -311,7 +277,7 @@ router.put('/like/:id', async (req, res) => {
     return res.status(400).send({ status: "error", error: "Need to pass id " });
 
   if (!id.match(/^[0-9a-fA-F]{24}$/))
-    return res.status(400).send({ status: "error", error: "Wrong id format" });
+    return res.status(400).send({ status: "error", error: "Id inválido" });
 
   // search brand
   Brand.findById(id, async function (error, brand) {
@@ -319,19 +285,19 @@ router.put('/like/:id', async (req, res) => {
       res.send(error);
 
     if (!brand)
-      return res.status(200).json({ status: "error", message: 'Brand not found' });
+      return res.status(200).json({ status: "error", message: 'Marca não encontrada' });
 
     await User.findOne({ 'email': req.body.email }, await function (error, user) {
       if (error)
         res.send(error);
     }).then(user => {
       if (!user)
-        return res.status(400).send({ status: "error", error: "User not found" });
+        return res.status(400).send({ status: "error", error: "Usuário não encontrado" });
 
       // checks if user already like
       for (var i = 0; i < brand.like.length; i++) {
         if (brand.like[i].user.email == user.email) {
-          return res.status(400).send({ status: "error", error: "User already likes it" })
+          return res.status(400).send({ status: "error", error: "Usuário já curtiu" })
         }
       }
       // checks if user already dislike and remove
@@ -366,7 +332,7 @@ router.put('/like/:id', async (req, res) => {
       brand.save(function (error) {
         if (error)
           res.send(error);
-        res.status(200).json({ status: "success", message: 'Liked it added to the brand!' });
+        res.status(200).json({ status: "success", message: 'Curtida adicionada' });
       });
 
     }).catch(e => {
@@ -378,22 +344,19 @@ router.put('/like/:id', async (req, res) => {
 
 /*PUT dislike brand*/
 router.put('/dislike/:id', async (req, res) => {
-  const { email,password} = req.body;
+  const { email} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
+  if(email == undefined)
+    return res.status(400).send({error : "Email inválido "});
 
   console.log("PUT ", req.params.id);
 
   if (id == undefined)
-    return res.status(400).send({ status: "error", error: "need to pass id " });
+    return res.status(400).send({ status: "error", error: "Id inválido " });
 
   if (!id.match(/^[0-9a-fA-F]{24}$/))
-    return res.status(400).send({ status: "error", error: "Wrong id format" });
+    return res.status(400).send({ status: "error", error: "Id inválido" });
 
   // search brand
   Brand.findById(id, async function (error, brand) {
@@ -410,12 +373,12 @@ router.put('/dislike/:id', async (req, res) => {
         res.send(error);
     }).then(user => {
       if (!user)
-        return res.status(400).send({ status: "error", error: "User not found" });
+        return res.status(400).send({ status: "error", error: "Usuário não encontrado" });
 
       // checks if user already dislike
       for (var i = 0; i < brand.dislike.length; i++) {
         if (brand.dislike[i].user.email == user.email) {
-          return res.status(400).send({ status: "error", error: "User already dislikes it" })
+          return res.status(400).send({ status: "error", error: "Usuário já deixou seu descontentamento" })
         }
       }
       // check if user already like and remove
@@ -451,7 +414,7 @@ router.put('/dislike/:id', async (req, res) => {
       brand.save(function (error) {
         if (error)
           res.send(error);
-        res.status(200).json({ status: "success", message: 'Dislike it added to the brand!' });
+        res.status(200).json({ status: "success", message: 'Descontentamento adicionado' });
       });
 
     }).catch(e => {
@@ -464,14 +427,11 @@ router.put('/dislike/:id', async (req, res) => {
 
 /*PUT comments brand*/
 router.put('/comments/:id', async (req, res) => {
-  const { email,password} = req.body;
+  const { email} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
+  if(email == undefined )
+    return res.status(400).send({error : "Email inválido "});
 
   console.log("PUT ", req.params.id);
 
@@ -543,5 +503,42 @@ router.put('/comments/:id', async (req, res) => {
   });
 });
 
+//delete comments
+router.put('/deletecomments/:id', async (req, res) => {
+  const { email,_id} = req.body;
+  const { id } = req.params;
+
+  if(email == undefined )
+    return res.status(400).send({error : "Email inválido"});
+
+  console.log("Delete ", req.params.id);
+
+  if (id == undefined)
+    return res.status(400).send({ error: "Precisa informar o id do produto" });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ error: "ID inválido" });
+
+    Brand.findById(id, async function (error, brand) {
+      if (error)
+        res.send(error);
+  
+      if (!brand)
+        return res.status(200).json({ status: "error", message: 'Marca não encontrada' });
+        
+        // checks comment in brand and remove
+        for (var i = 0; i < brand.comments.length; i++) {
+          if (brand.comments[i]._id == _id) {
+            brand.comments.pull(brand.comments[i]);
+          }
+        }
+        brand.save(function (error) {
+          if (error)
+            res.send(error);
+          res.status(200).json({ status: "success", message: 'Comentário excluído' });
+        });
+    });
+  });
+  
 module.exports = app => app.use('/brand', router);
 

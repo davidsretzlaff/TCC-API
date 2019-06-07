@@ -80,9 +80,6 @@ router.post('/', async (req, res) => {
   if (email == undefined || password == undefined)
     return res.status(400).send({ error: "Need email and password for authentication " });
 
-  if (!await checkLogin(email, password))
-    return res.status(400).send({ error: "Authentication filed" })
-
   if (!await checkPermission(email))
     return res.status(400).send({ error: "Permission denied" })
 
@@ -114,9 +111,6 @@ router.put('/:id', async function (req, res, next) {
 
   if (email == undefined || password == undefined)
     return res.status(400).send({ error: "Need email and password for authentication " });
-
-  if (!await checkLogin(email, password))
-    return res.status(400).send({ error: "Authentication filed" })
 
   if (!await checkPermission(email))
     return res.status(400).send({ error: "Permission denied" })
@@ -155,8 +149,6 @@ router.delete('/:id', async (req, res) => {
   if (email == undefined || password == undefined)
     return res.status(400).send({ error: "Need email and password for authentication " });
 
-  if (!await checkLogin(email, password))
-    return res.status(400).send({ error: "Authentication filed" })
 
   if (!await checkPermission(email))
     return res.status(400).send({ error: "Permission denied" })

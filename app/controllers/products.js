@@ -25,24 +25,6 @@ router.use((req,res,next)=>{
   next();
 });
 
-async function checkLogin(email,password){
-    if(email == undefined)
-        return false;
-    
-    if(password == undefined)
-        return false;
-    
-    const user = await User.findOne({ email }).select('+password');
-
-    if( !user )
-      return false;
-    
-    if(!await bcrypt.compare(password, user.password))
-        return false;
-    
-    return true;
-}
-
 async function checkPermission(email){
   const user = await User.findOne({ email });
 
@@ -153,7 +135,7 @@ router.get('/name/:name', function (req, res, next) {
       search.verify = false;
       search.save(function (error) {
       });
-      return res.status(400).send({ status: "error", error: "Product not found" });
+      return res.status(400).send({ status: "error", error: "Produto nao encontrado" });
     }
     res.status(200).send(data);
   }).catch(e => {
@@ -167,7 +149,7 @@ router.get('/barcode/:barcode', function (req, res, next) {
   console.log("search product to barcode", req.params.barcode)
   const { barcode } = req.params;
   if (barcode == undefined)
-    return res.status(400).send({ status: "error", error: "need to pass barcode" });
+    return res.status(400).send({ status: "error", error: "Precisa inserir o código de baras" });
 
   Product.find({
     active: true,
@@ -191,13 +173,6 @@ router.get('/barcode/:barcode', function (req, res, next) {
 router.post('/', upload.single('productImage'), async (req, res) => {
   const { email,password} = req.body;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
-  
-  
   console.log("POST");
   if (req.file != undefined)
     console.log(req.file);
@@ -205,11 +180,11 @@ router.post('/', upload.single('productImage'), async (req, res) => {
   var name = req.body.name;
 
   if (!name) {
-    return res.status(400).send({ status: "error", error: "name is required" });
+    return res.status(400).send({ status: "error", error: "Precisa preencher o nome" });
   }
 
   if (await Product.findOne({ name })) {
-    return res.status(400).send({ status: "error", error: "Product already exist" });
+    return res.status(400).send({ status: "error", error: "Produto já existe" });
   }
 
   var product = new Product();
@@ -228,8 +203,8 @@ router.post('/', upload.single('productImage'), async (req, res) => {
   product.linkPeta = req.body.linkPeta;
 
   // Checks if brand is cruelty free, if is not so add information in product 
-  if (req.body.brand != undefined && req.body.brand.name != undefined) {
-    if (await Brand.findOne({ 'name': req.body.brand.name, 'isCrueltyFree': false })) {
+  if (req.body.brand != undefined) {
+    if (await Brand.findOne({ 'name': req.body.brand, 'isCrueltyFree': false })) {
       product.isCrueltyFree = false;
       product.isCrueltyFreeVerify = true;
     }
@@ -241,6 +216,7 @@ router.post('/', upload.single('productImage'), async (req, res) => {
 
   // checks if ingredients dont contains in ingredients table animal origin
   // if contains, so add false vegan in product
+  if(req.body.ingredients != undefined){
   await asyncForEach(req.body.ingredients, async (element) => {
     product.isVeganVerify = true;
     if (element != undefined) {
@@ -250,8 +226,10 @@ router.post('/', upload.single('productImage'), async (req, res) => {
       }
     }
   });
-
   product.ingredients = req.body.ingredients;
+}
+
+
 
   product.save(function (error) {
     if (error)
@@ -269,9 +247,6 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
   
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
-  
   if(!await checkPermission(email))
     return res.status(400).send({error: "Permission denied"})
 
@@ -287,7 +262,7 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
     if (error)
       res.send(error);
     if (!product)
-      return res.status(200).json({ status: "error", message: 'product not found' });
+      return res.status(400).json({ status: "error", message: 'product not found' });
 
     if (req.body.name != undefined)
       product.name = req.body.name;
@@ -314,7 +289,7 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
       product.isCrueltyFreeVerify = req.body.isCrueltyFreeVerify;
 
     if (req.body.brand != undefined)
-      req.body.brand.name
+      product.brand = req.body.brand
 
     if (req.file != undefined && req.file.path != undefined)
       product.productImage = req.file.path;
@@ -325,8 +300,8 @@ router.put('/:id', upload.single('productImage'), async (req, res) => {
     if (req.body.linkPeta != undefined)
       product.linkPeta = req.body.linkPeta;
 
-    if (req.body.brand != undefined && req.body.brand.name != undefined) {
-      if (await Brand.findOne({ 'name': req.body.brand.name, 'isCrueltyFree': false })) {
+    if (req.body.brand != undefined ) {
+      if (await Brand.findOne({ 'name': req.body.brand, 'isCrueltyFree': false })) {
         product.isCrueltyFree = false;
         product.isCrueltyFreeVerify = true;
       }
@@ -360,9 +335,6 @@ router.put('/like/:id', async (req, res) => {
 
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
 
   console.log("PUT ", req.params.id);
 
@@ -445,9 +417,6 @@ router.put('/dislike/:id', async (req, res) => {
 
   if(email == undefined || password == undefined)
     return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
 
   console.log("PUT ", req.params.id);
 
@@ -529,19 +498,17 @@ router.put('/comments/:id', async (req, res) => {
   const { email,password} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
+  if(email == undefined )
+    return res.status(400).send({error : "Usuario expirou. Faça login novamente."});
+
 
   console.log("PUT ", req.params.id);
 
   if (id == undefined)
-    return res.status(400).send({ status: "error", error: "need to pass id " });
+    return res.status(400).send({ status: "error", error: "Não foi informado o id do produto " });
 
   if (!id.match(/^[0-9a-fA-F]{24}$/))
-    return res.status(400).send({ status: "error", error: "Wrong id format" });
+    return res.status(400).send({ status: "error", error: "Formato do ID incorreto." });
 
   // searching product
   Product.findById(id, async function (error, product) {
@@ -549,7 +516,7 @@ router.put('/comments/:id', async (req, res) => {
       res.send(error);
 
     if (!product)
-      return res.status(200).json({ status: "error", message: 'product not found' });
+      return res.status(200).json({ status: "error", message: 'Produto não encontrado' });
 
 
     // searching user
@@ -558,7 +525,7 @@ router.put('/comments/:id', async (req, res) => {
         res.send(error);
     }).then(user => {
       if (!user)
-        return res.status(400).send({ status: "error", error: "User not found" });
+        return res.status(400).send({ status: "error", error: "Usuário não encontrado" });
 
       const UserSchema = new mongoose.Schema({
         id_: mongoose.Schema.Types.ObjectId,
@@ -596,7 +563,7 @@ router.put('/comments/:id', async (req, res) => {
       product.save(function (error) {
         if (error)
           res.send(error);
-        res.status(200).json({ status: "success", message: 'comment it added to the product!' });
+        res.status(200).json({ status: "success", message: 'Comentário adicionado' });
       });
 
     }).catch(e => {
@@ -605,6 +572,8 @@ router.put('/comments/:id', async (req, res) => {
 
   });
 });
+
+
 
 async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
@@ -616,11 +585,8 @@ router.delete('/:id', async (req, res) => {
   const { email,password} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
-  
-  if(!await checkLogin(email,password))
-    return res.status(400).send({error: "Authentication filed"})
+  if(email == undefined )
+    return res.status(400).send({error : "Need email for authentication "});
   
   if(!await checkPermission(email))
     return res.status(400).send({error: "Permission denied"})
@@ -647,5 +613,42 @@ router.delete('/:id', async (req, res) => {
   });
 });
 
+//delete comments
+router.put('/deletecomments/:id', async (req, res) => {
+  const { email,_id} = req.body;
+  const { id } = req.params;
+
+  if(email == undefined )
+    return res.status(400).send({error : "Email inválido"});
+
+  console.log("Delete ", req.params.id);
+
+  if (id == undefined)
+    return res.status(400).send({ error: "Precisa informar o id do produto" });
+
+  if (!id.match(/^[0-9a-fA-F]{24}$/))
+    return res.status(400).send({ error: "ID inválido" });
+
+    Product.findById(id, async function (error, product) {
+      if (error)
+        res.send(error);
+  
+      if (!product)
+        return res.status(200).json({ status: "error", message: 'product not found' });
+        
+        // checks comment in product and remove
+        for (var i = 0; i < product.comments.length; i++) {
+          if (product.comments[i]._id == _id) {
+            product.comments.pull(product.comments[i]);
+          }
+        }
+        product.save(function (error) {
+          if (error)
+            res.send(error);
+          res.status(200).json({ status: "success", message: 'Comentário excluído' });
+        });
+    });
+  });
+  
 
 module.exports = app => app.use('/product', router);
