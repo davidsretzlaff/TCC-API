@@ -333,16 +333,16 @@ router.put('/like/:id', async (req, res) => {
   const { email,password} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
+  if(email == undefined )
+    return res.status(400).send({error : "Email ínvalido "});
 
   console.log("PUT ", req.params.id);
 
   if (id == undefined)
-    return res.status(400).send({ status: "error", error: "need to pass id " });
+    return res.status(400).send({ status: "error", error: "id não informado" });
 
   if (!id.match(/^[0-9a-fA-F]{24}$/))
-    return res.status(400).send({ status: "error", error: "Wrong id format" });
+    return res.status(400).send({ status: "error", error: "Formato Id errado." });
 
   // searching product
   Product.findById(id, async function (error, product) {
@@ -350,7 +350,7 @@ router.put('/like/:id', async (req, res) => {
       res.send(error);
 
     if (!product)
-      return res.status(200).json({ status: "error", message: 'product not found' });
+      return res.status(200).json({ status: "error", message: 'Produto não encontrado' });
 
 
     // searching user
@@ -359,12 +359,12 @@ router.put('/like/:id', async (req, res) => {
         res.send(error);
     }).then(user => {
       if (!user)
-        return res.status(400).send({ status: "error", error: "User not found" });
+        return res.status(400).send({ status: "error", error: "Usuário nao encontrado" });
 
       // checks if user already like product
       for (var i = 0; i < product.like.length; i++) {
         if (product.like[i].user.email == user.email) {
-          return res.status(400).send({ status: "error", error: "User already likes it" })
+          return res.status(400).send({ status: "error", error: "Você já curtiu" })
         }
       }
       // checks if user already dislik product and remove
@@ -415,16 +415,16 @@ router.put('/dislike/:id', async (req, res) => {
   const { email,password} = req.body;
   const { id } = req.params;
 
-  if(email == undefined || password == undefined)
-    return res.status(400).send({error : "Need email and password for authentication "});
+  if(email == undefined )
+    return res.status(400).send({error : "Usuário não informado"});
 
   console.log("PUT ", req.params.id);
 
   if (id == undefined)
-    return res.status(400).send({ status: "error", error: "need to pass id " });
+    return res.status(400).send({ status: "error", error: "Id não informado" });
 
   if (!id.match(/^[0-9a-fA-F]{24}$/))
-    return res.status(400).send({ status: "error", error: "Wrong id format" });
+    return res.status(400).send({ status: "error", error: "Id em formato errado" });
 
   // searching product
   Product.findById(id, async function (error, product) {
@@ -432,7 +432,7 @@ router.put('/dislike/:id', async (req, res) => {
       res.send(error);
 
     if (!product)
-      return res.status(200).json({ status: "error", message: 'product not found' });
+      return res.status(200).json({ status: "error", message: 'Produto não encontrado' });
 
 
     // searching user
@@ -441,12 +441,12 @@ router.put('/dislike/:id', async (req, res) => {
         res.send(error);
     }).then(user => {
       if (!user)
-        return res.status(400).send({ status: "error", error: "User not found" });
+        return res.status(400).send({ status: "error", error: "Usuário não encontrado" });
 
       // checks if user already like product
       for (var i = 0; i < product.dislike.length; i++) {
         if (product.dislike[i].user.email == user.email) {
-          return res.status(400).send({ status: "error", error: "User already dislikes it" })
+          return res.status(400).send({ status: "error", error: "Você já descurtiu" })
         }
       }
       // checks if user already dislike product and remove
@@ -482,7 +482,7 @@ router.put('/dislike/:id', async (req, res) => {
       product.save(function (error) {
         if (error)
           res.send(error);
-        res.status(200).json({ status: "success", message: 'Dislike it added to the product!' });
+        res.status(200).json({ status: "success", message: 'Descurtida adicionado no produto' });
       });
 
     }).catch(e => {
